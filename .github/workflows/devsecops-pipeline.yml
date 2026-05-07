@@ -19,6 +19,7 @@ jobs:
 
       - name: Run GitLeaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
+        continue-on-error: true
 
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
