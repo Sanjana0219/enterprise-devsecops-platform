@@ -82,6 +82,20 @@ jobs:
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
 
+      - name: Install Python Dependencies
+        run: |
+          pip install openpyxl
+
+      - name: Generate Excel Security Report
+        run: |
+          python scripts/generate-report.py
+
+      - name: Upload Security Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.xlsx
+
   deploy:
 
     needs: detect-stack
