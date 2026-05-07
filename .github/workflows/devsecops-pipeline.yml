@@ -33,5 +33,12 @@ jobs:
           path: "./customer-app"
           format: "HTML"
 
+      - name: Run Trivy Container Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          scan-ref: "./customer-app"
+          format: table
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
