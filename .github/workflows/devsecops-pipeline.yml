@@ -39,12 +39,17 @@ jobs:
           scan-type: fs
           scan-ref: "./customer-app"
           format: table
+          output: trivy-report.txt
+        continue-on-error: true
 
       - name: Run Checkov IaC Scan
         uses: bridgecrewio/checkov-action@master
         with:
           directory: ./customer-app
           framework: kubernetes
+
+      - name: Run OPA Policy Gate
+        run: bash scripts/policy-check.sh
 
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
