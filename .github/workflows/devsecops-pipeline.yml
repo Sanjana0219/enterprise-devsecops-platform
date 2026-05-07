@@ -17,5 +17,8 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      - name: Run GitLeaks Secret Scan
+        uses: gitleaks/gitleaks-action@v2
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
