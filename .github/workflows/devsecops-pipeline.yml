@@ -44,7 +44,7 @@ jobs:
         uses: bridgecrewio/checkov-action@master
         with:
           directory: ./customer-app
-          framework: kubernetess
+          framework: kubernetes
 
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
