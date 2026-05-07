@@ -52,6 +52,26 @@ jobs:
         run: bash scripts/policy-check.sh
         continue-on-error: true
 
+      - name: Send Email Notification
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.sendgrid.net
+          server_port: 587
+          username: apikey
+          password: ${{ secrets.SENDGRID_API_KEY }}
+          subject: "Enterprise DevSecOps Pipeline Failed"
+          to: patkotwarsanjana@gmail.com
+          from: patkotwarsanjana@gmail.com
+          body: |
+            Enterprise DevSecOps Alert
+
+            HIGH or CRITICAL vulnerabilities detected.
+
+            Pipeline execution failed.
+
+            Manual approval required before deployment.
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
 
