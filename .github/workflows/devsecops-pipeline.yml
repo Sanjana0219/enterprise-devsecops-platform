@@ -40,5 +40,11 @@ jobs:
           scan-ref: "./customer-app"
           format: table
 
+      - name: Run Checkov IaC Scan
+        uses: bridgecrewio/checkov-action@master
+        with:
+          directory: ./customer-app
+          framework: kubernetess
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
