@@ -26,5 +26,12 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
+      - name: OWASP Dependency Check
+        uses: dependency-check/Dependency-Check_Action@main
+        with:
+          project: "enterprise-devsecops-platform"
+          path: "./customer-app"
+          format: "HTML"
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
