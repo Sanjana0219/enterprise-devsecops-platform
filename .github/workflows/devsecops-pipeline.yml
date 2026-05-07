@@ -50,7 +50,6 @@ jobs:
 
       - name: Run OPA Policy Gate
         run: bash scripts/policy-check.sh
-        continue-on-error: true
 
       - name: Send Email Notification
         if: failure()
@@ -78,6 +77,8 @@ jobs:
   deploy:
 
     needs: detect-stack
+
+    if: always()
 
     runs-on: ubuntu-latest
 
