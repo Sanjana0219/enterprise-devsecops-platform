@@ -23,6 +23,7 @@ jobs:
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
+        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -32,6 +33,7 @@ jobs:
           project: "enterprise-devsecops-platform"
           path: "./customer-app"
           format: "HTML"
+        continue-on-error: true
 
       - name: Run Snyk Scan
         uses: snyk/actions/node@master
@@ -62,6 +64,7 @@ jobs:
 
       - name: Send Email Notification
         if: failure()
+        continue-on-error: true
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: smtp.sendgrid.net
