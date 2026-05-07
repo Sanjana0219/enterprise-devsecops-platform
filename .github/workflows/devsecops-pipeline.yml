@@ -21,5 +21,10 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         continue-on-error: true
 
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@master
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
