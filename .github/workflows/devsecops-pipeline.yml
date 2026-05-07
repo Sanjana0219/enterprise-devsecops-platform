@@ -97,7 +97,7 @@ jobs:
           name: security-report
           path: security-report.xlsx
 
-  deploy:
+    deploy:
 
     needs: detect-stack
 
@@ -110,7 +110,38 @@ jobs:
 
     steps:
 
-      - name: Deploy Approval Stage
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v4
+
+      - name: Update kubeconfig
         run: |
-          echo "Deployment approved"
-          echo "Ready for EKS deployment"
+          aws eks update-kubeconfig \
+            --region ap-south-1 \
+            --name enterprise-devsecops-cluster
+
+      - name: Deploy MongoDB
+        run: |
+          kubectl apply -f customer-app/mongodb-deployment.yaml
+
+      - name: Deploy Application
+        run: |
+          kubectl apply -f customer-app/app-deployment.yaml
+
+      - name: Deploy Service
+        run: |
+          kubectl apply -f eks/service.yaml
+
+      - name: Verify Deployment
+        run: |
+          kubectl get pods
+          kubectl get svc
