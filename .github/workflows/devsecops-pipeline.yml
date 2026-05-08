@@ -17,27 +17,26 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # -----------------------------
+      # ==========================================
       # SECRET SCANNING
-      # -----------------------------
+      # ==========================================
 
       - name: Run GitLeaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         continue-on-error: true
 
-      # -----------------------------
+      # ==========================================
       # STATIC CODE ANALYSIS
-      # -----------------------------
+      # ==========================================
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
-        continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-      # -----------------------------
-      # DEPENDENCY SCANNING
-      # -----------------------------
+      # ==========================================
+      # OWASP DEPENDENCY CHECK
+      # ==========================================
 
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
@@ -45,22 +44,23 @@ jobs:
           project: "enterprise-devsecops-platform"
           path: "./customer-app"
           format: "HTML"
-        continue-on-error: true
 
-      # -----------------------------
+      # ==========================================
       # SNYK SECURITY GATE
-      # -----------------------------
+      # FAIL ON HIGH/CRITICAL
+      # ==========================================
 
       - name: Run Snyk Scan
         uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          args: --all-projects
+          args: --all-projects --severity-threshold=high
 
-      # -----------------------------
+      # ==========================================
       # TRIVY CONTAINER SECURITY
-      # -----------------------------
+      # FAIL ON HIGH/CRITICAL
+      # ==========================================
 
       - name: Run Trivy Container Scan
         uses: aquasecurity/trivy-action@master
@@ -69,27 +69,28 @@ jobs:
           scan-ref: "./customer-app"
           format: table
           output: trivy-report.txt
+          severity: HIGH,CRITICAL
+          exit-code: 1
 
-      # -----------------------------
+      # ==========================================
       # IaC SECURITY SCAN
-      # -----------------------------
+      # ==========================================
 
       - name: Run Checkov IaC Scan
         uses: bridgecrewio/checkov-action@master
         with:
           directory: ./customer-app
-        continue-on-error: true
 
-      # -----------------------------
+      # ==========================================
       # POLICY GOVERNANCE GATE
-      # -----------------------------
+      # ==========================================
 
       - name: Run OPA Policy Gate
         run: bash scripts/policy-check.sh
 
-      # -----------------------------
+      # ==========================================
       # EMAIL ALERT ON FAILURE
-      # -----------------------------
+      # ==========================================
 
       - name: Send Email Notification
         if: failure()
@@ -108,47 +109,53 @@ jobs:
 
             HIGH or CRITICAL vulnerabilities were detected.
 
-            Deployment has been blocked automatically.
+            Deployment has been BLOCKED automatically.
 
             Please review:
             - Snyk findings
             - Trivy findings
+            - Checkov findings
             - OPA governance violations
-            - Security report artifact
+
+            Review the generated Excel report artifact.
 
             Fix vulnerabilities before re-deployment.
 
-      # -----------------------------
+      # ==========================================
       # STACK DETECTION
-      # -----------------------------
+      # ==========================================
 
       - name: Run Stack Detection
+        if: failure()
         run: bash scripts/detect-stack.sh
 
-      # -----------------------------
+      # ==========================================
       # PYTHON DEPENDENCIES
-      # -----------------------------
+      # ==========================================
 
       - name: Install Python Dependencies
+        if: failure()
         run: |
           pip install openpyxl
 
-      # -----------------------------
-      # GENERATE EXCEL REPORT
-      # -----------------------------
+      # ==========================================
+      # GENERATE FAILED SECURITY REPORT
+      # ==========================================
 
-      - name: Generate Excel Security Report
+      - name: Generate Failed Security Report
+        if: failure()
         run: |
           python scripts/generate-report.py
 
-      # -----------------------------
-      # UPLOAD REPORT
-      # -----------------------------
+      # ==========================================
+      # UPLOAD FAILED REPORT
+      # ==========================================
 
-      - name: Upload Security Report
+      - name: Upload Failed Security Report
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: security-report
+          name: failed-security-report
           path: security-report.xlsx
 
   # ==========================================
@@ -170,9 +177,9 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # -----------------------------
+      # ==========================================
       # AWS AUTHENTICATION
-      # -----------------------------
+      # ==========================================
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -181,16 +188,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # -----------------------------
+      # ==========================================
       # INSTALL KUBECTL
-      # -----------------------------
+      # ==========================================
 
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
 
-      # -----------------------------
+      # ==========================================
       # CONNECT TO EKS
-      # -----------------------------
+      # ==========================================
 
       - name: Update kubeconfig
         run: |
@@ -198,35 +205,45 @@ jobs:
             --region ap-south-1 \
             --name enterprise-devsecops-cluster
 
-      # -----------------------------
+      # ==========================================
       # DEPLOY MONGODB
-      # -----------------------------
+      # ==========================================
 
       - name: Deploy MongoDB
         run: |
           kubectl apply -f customer-app/mongodb-deployment.yaml
 
-      # -----------------------------
+      # ==========================================
       # DEPLOY APPLICATION
-      # -----------------------------
+      # ==========================================
 
       - name: Deploy Application
         run: |
           kubectl apply -f customer-app/app-deployment.yaml
 
-      # -----------------------------
+      # ==========================================
       # DEPLOY LOADBALANCER SERVICE
-      # -----------------------------
+      # ==========================================
 
       - name: Deploy Service
         run: |
           kubectl apply -f eks/service.yaml
 
-      # -----------------------------
+      # ==========================================
       # VERIFY DEPLOYMENT
-      # -----------------------------
+      # ==========================================
 
       - name: Verify Deployment
         run: |
-          kubectl get pods
-          kubectl get svc
+          kubectl get pods -n production
+          kubectl get svc -n production
+
+      # ==========================================
+      # GENERATE DEPLOYMENT SUMMARY
+      # ==========================================
+
+      - name: Generate Deployment Summary
+        run: |
+          echo "Deployment completed successfully"
+          kubectl get pods -n production
+          kubectl get svc -n production
