@@ -78,7 +78,7 @@ jobs:
       # -----------------------------
 
       - name: Run Snyk Scan
-        uses: snyk/actions/node@v3
+        uses: snyk/actions/node@master
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
@@ -89,7 +89,7 @@ jobs:
       # -----------------------------
 
       - name: Run Trivy Container Scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@master
         with:
           scan-type: fs
           scan-ref: "./customer-app"
