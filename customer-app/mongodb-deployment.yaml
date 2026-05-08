@@ -1,39 +1,80 @@
 apiVersion: apps/v1
 kind: Deployment
+
 metadata:
   name: mongodb
+  namespace: production
+
 spec:
   replicas: 1
+
   selector:
     matchLabels:
       app: mongodb
+
   template:
     metadata:
       labels:
         app: mongodb
+
     spec:
+      automountServiceAccountToken: false
+
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+
       containers:
-      - name: mongodb
-        image: mongo:7-jammy
-        ports:
-        - containerPort: 27017
-        volumeMounts:
-        - name: mongodb-storage
-          mountPath: /data/db
+        - name: mongodb
+
+          image: mongo:7-jammy
+
+          ports:
+            - containerPort: 27017
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "250m"
+
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+
+          readinessProbe:
+            tcpSocket:
+              port: 27017
+            initialDelaySeconds: 10
+            periodSeconds: 5
+
+          volumeMounts:
+            - name: mongodb-storage
+              mountPath: /data/db
+
       volumes:
-      - name: mongodb-storage
-        emptyDir: {}
+        - name: mongodb-storage
+          emptyDir: {}
 ---
+
 apiVersion: v1
 kind: Service
+
 metadata:
   name: mongodb-service
+  namespace: production
+
 spec:
   selector:
     app: mongodb
+
   ports:
-  - port: 27017
-    targetPort: 27017
+    - port: 27017
+      targetPort: 27017
+
   type: ClusterIP
- 
- 
