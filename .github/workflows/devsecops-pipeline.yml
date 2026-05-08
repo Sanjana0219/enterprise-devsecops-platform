@@ -33,7 +33,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t sanjana0219/fitness-tracker:latest ./customer-app
+          docker build -t sanjup19/fitness-tracker:latest ./customer-app
 
       # -----------------------------
       # PUSH IMAGE TO DOCKER HUB
@@ -41,7 +41,7 @@ jobs:
 
       - name: Push Docker Image
         run: |
-          docker push sanjana0219/fitness-tracker:latest
+          docker push sanjup19/fitness-tracker:latest
 
       # -----------------------------
       # SECRET SCANNING
