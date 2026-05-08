@@ -17,15 +17,27 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # SECRET SCANNING
+      # -----------------------------
+
       - name: Run GitLeaks Secret Scan
         uses: gitleaks/gitleaks-action@v2
         continue-on-error: true
+
+      # -----------------------------
+      # STATIC CODE ANALYSIS
+      # -----------------------------
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarqube-scan-action@master
         continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      # -----------------------------
+      # DEPENDENCY SCANNING
+      # -----------------------------
 
       - name: OWASP Dependency Check
         uses: dependency-check/Dependency-Check_Action@main
@@ -35,13 +47,20 @@ jobs:
           format: "HTML"
         continue-on-error: true
 
+      # -----------------------------
+      # SNYK SECURITY GATE
+      # -----------------------------
+
       - name: Run Snyk Scan
         uses: snyk/actions/node@master
-        continue-on-error: true
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           args: --all-projects
+
+      # -----------------------------
+      # TRIVY CONTAINER SECURITY
+      # -----------------------------
 
       - name: Run Trivy Container Scan
         uses: aquasecurity/trivy-action@master
@@ -50,7 +69,10 @@ jobs:
           scan-ref: "./customer-app"
           format: table
           output: trivy-report.txt
-        continue-on-error: true
+
+      # -----------------------------
+      # IaC SECURITY SCAN
+      # -----------------------------
 
       - name: Run Checkov IaC Scan
         uses: bridgecrewio/checkov-action@master
@@ -58,9 +80,16 @@ jobs:
           directory: ./customer-app
         continue-on-error: true
 
+      # -----------------------------
+      # POLICY GOVERNANCE GATE
+      # -----------------------------
+
       - name: Run OPA Policy Gate
         run: bash scripts/policy-check.sh
-        continue-on-error: true
+
+      # -----------------------------
+      # EMAIL ALERT ON FAILURE
+      # -----------------------------
 
       - name: Send Email Notification
         if: failure()
@@ -71,28 +100,50 @@ jobs:
           server_port: 587
           username: apikey
           password: ${{ secrets.SENDGRID_API_KEY }}
-          subject: "Enterprise DevSecOps Pipeline Failed"
+          subject: "Enterprise DevSecOps Security Alert"
           to: patkotwarsanjana@gmail.com
           from: patkotwarsanjana@gmail.com
           body: |
-            Enterprise DevSecOps Alert
+            Enterprise DevSecOps Security Alert
 
-            HIGH or CRITICAL vulnerabilities detected.
+            HIGH or CRITICAL vulnerabilities were detected.
 
-            Pipeline execution failed.
+            Deployment has been blocked automatically.
 
-            Manual approval required before deployment.
+            Please review:
+            - Snyk findings
+            - Trivy findings
+            - OPA governance violations
+            - Security report artifact
+
+            Fix vulnerabilities before re-deployment.
+
+      # -----------------------------
+      # STACK DETECTION
+      # -----------------------------
 
       - name: Run Stack Detection
         run: bash scripts/detect-stack.sh
+
+      # -----------------------------
+      # PYTHON DEPENDENCIES
+      # -----------------------------
 
       - name: Install Python Dependencies
         run: |
           pip install openpyxl
 
+      # -----------------------------
+      # GENERATE EXCEL REPORT
+      # -----------------------------
+
       - name: Generate Excel Security Report
         run: |
           python scripts/generate-report.py
+
+      # -----------------------------
+      # UPLOAD REPORT
+      # -----------------------------
 
       - name: Upload Security Report
         uses: actions/upload-artifact@v4
@@ -100,11 +151,14 @@ jobs:
           name: security-report
           path: security-report.xlsx
 
+  # ==========================================
+  # DEPLOYMENT JOB
+  # ONLY RUNS IF SECURITY PASSES
+  # ==========================================
+
   deploy:
 
     needs: detect-stack
-
-    if: always()
 
     runs-on: ubuntu-latest
 
@@ -116,6 +170,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # -----------------------------
+      # AWS AUTHENTICATION
+      # -----------------------------
+
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -123,8 +181,16 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      # -----------------------------
+      # INSTALL KUBECTL
+      # -----------------------------
+
       - name: Install kubectl
         uses: azure/setup-kubectl@v4
+
+      # -----------------------------
+      # CONNECT TO EKS
+      # -----------------------------
 
       - name: Update kubeconfig
         run: |
@@ -132,17 +198,33 @@ jobs:
             --region ap-south-1 \
             --name enterprise-devsecops-cluster
 
+      # -----------------------------
+      # DEPLOY MONGODB
+      # -----------------------------
+
       - name: Deploy MongoDB
         run: |
           kubectl apply -f customer-app/mongodb-deployment.yaml
+
+      # -----------------------------
+      # DEPLOY APPLICATION
+      # -----------------------------
 
       - name: Deploy Application
         run: |
           kubectl apply -f customer-app/app-deployment.yaml
 
+      # -----------------------------
+      # DEPLOY LOADBALANCER SERVICE
+      # -----------------------------
+
       - name: Deploy Service
         run: |
           kubectl apply -f eks/service.yaml
+
+      # -----------------------------
+      # VERIFY DEPLOYMENT
+      # -----------------------------
 
       - name: Verify Deployment
         run: |
