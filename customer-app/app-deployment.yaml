@@ -27,7 +27,7 @@ spec:
       containers:
         - name: fitness-tracker-app
 
-          image: sanjup19/fitness-tracker:latest
+          image: pulkit197/fitness_tracker-master-copy3-fitness-app:latest
 
           ports:
             - containerPort: 5000

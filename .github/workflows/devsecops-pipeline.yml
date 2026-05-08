@@ -18,32 +18,6 @@ jobs:
         uses: actions/checkout@v4
 
       # -----------------------------
-      # LOGIN TO DOCKER HUB
-      # -----------------------------
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-
-      # -----------------------------
-      # BUILD DOCKER IMAGE
-      # -----------------------------
-
-      - name: Build Docker Image
-        run: |
-          docker build -t sanjup19/fitness-tracker:latest ./customer-app
-
-      # -----------------------------
-      # PUSH IMAGE TO DOCKER HUB
-      # -----------------------------
-
-      - name: Push Docker Image
-        run: |
-          docker push sanjup19/fitness-tracker:latest
-
-      # -----------------------------
       # SECRET SCANNING
       # -----------------------------
 
@@ -56,7 +30,7 @@ jobs:
       # -----------------------------
 
       - name: SonarCloud Scan
-        uses: SonarSource/sonarqube-scan-action@v5
+        uses: SonarSource/sonarqube-scan-action@master
         continue-on-error: true
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
@@ -101,7 +75,7 @@ jobs:
       # -----------------------------
 
       - name: Run Checkov IaC Scan
-        uses: bridgecrewio/checkov-action@v12
+        uses: bridgecrewio/checkov-action@master
         with:
           directory: ./customer-app
         continue-on-error: true
@@ -131,19 +105,14 @@ jobs:
           from: patkotwarsanjana@gmail.com
           body: |
             Enterprise DevSecOps Security Alert
-
             HIGH or CRITICAL vulnerabilities were detected.
-
             Deployment has been blocked automatically.
-
             Please review:
             - Snyk findings
             - Trivy findings
             - OPA governance violations
             - Security report artifact
-
             Fix vulnerabilities before re-deployment.
-
       # -----------------------------
       # STACK DETECTION
       # -----------------------------
@@ -158,7 +127,6 @@ jobs:
       - name: Install Python Dependencies
         run: |
           pip install openpyxl
-
       # -----------------------------
       # GENERATE EXCEL REPORT
       # -----------------------------
@@ -166,7 +134,6 @@ jobs:
       - name: Generate Excel Security Report
         run: |
           python scripts/generate-report.py
-
       # -----------------------------
       # UPLOAD REPORT
       # -----------------------------
@@ -223,7 +190,6 @@ jobs:
           aws eks update-kubeconfig \
             --region ap-south-1 \
             --name enterprise-devsecops-cluster
-
       # -----------------------------
       # DEPLOY MONGODB
       # -----------------------------
@@ -231,7 +197,6 @@ jobs:
       - name: Deploy MongoDB
         run: |
           kubectl apply -f customer-app/mongodb-deployment.yaml
-
       # -----------------------------
       # DEPLOY APPLICATION
       # -----------------------------
@@ -239,7 +204,6 @@ jobs:
       - name: Deploy Application
         run: |
           kubectl apply -f customer-app/app-deployment.yaml
-
       # -----------------------------
       # DEPLOY LOADBALANCER SERVICE
       # -----------------------------
@@ -247,7 +211,6 @@ jobs:
       - name: Deploy Service
         run: |
           kubectl apply -f eks/service.yaml
-
       # -----------------------------
       # VERIFY DEPLOYMENT
       # -----------------------------
