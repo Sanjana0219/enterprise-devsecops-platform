@@ -1,85 +1,113 @@
 from openpyxl import Workbook
-from openpyxl.styles import Font
+from openpyxl.styles import Font, PatternFill
 
-# Create workbook
 wb = Workbook()
+ws = wb.active
+ws.title = "Security Scan Report"
 
-# Remove default sheet
-default_sheet = wb.active
-wb.remove(default_sheet)
-
-# -----------------------------
-# TRIVY SHEET
-# -----------------------------
-trivy_sheet = wb.create_sheet("Trivy Scan")
-
-headers = ["Severity", "Package", "Vulnerability", "Status"]
-
-for col, header in enumerate(headers, 1):
-    cell = trivy_sheet.cell(row=1, column=col)
-    cell.value = header
-    cell.font = Font(bold=True)
-
-sample_data = [
-    ["CRITICAL", "protobufjs", "CVE-2025-41422", "FAIL"],
-    ["HIGH", "mongoose", "CVE-2025-42334", "FAIL"],
-    ["MEDIUM", "qs", "CVE-2025-15284", "WARN"]
+headers = [
+    "Scanner",
+    "Critical",
+    "High",
+    "Medium",
+    "Low",
+    "Status"
 ]
 
-for row in sample_data:
-    trivy_sheet.append(row)
+ws.append(headers)
 
-# -----------------------------
-# CHECKOV SHEET
-# -----------------------------
-checkov_sheet = wb.create_sheet("Checkov Scan")
-
-headers = ["Policy", "File", "Status"]
-
-for col, header in enumerate(headers, 1):
-    cell = checkov_sheet.cell(row=1, column=col)
-    cell.value = header
-    cell.font = Font(bold=True)
-
-checkov_data = [
-    ["CKV_K8S_21", "configmap.yml", "FAIL"],
-    ["CKV_K8S_8", "mongodb-deployment.yaml", "FAIL"],
-    ["CKV_K8S_15", "mongodb-deployment.yaml", "FAIL"]
+# Example enterprise vulnerability summary
+data = [
+    ["Snyk", 1, 6, 4, 0, "FAIL"],
+    ["Trivy", 0, 3, 2, 1, "WARN"],
+    ["Checkov", 0, 8, 2, 0, "FAIL"],
+    ["Gitleaks", 2, 0, 0, 0, "FAIL"],
+    ["OWASP Dependency Check", 1, 4, 5, 2, "FAIL"],
+    ["OPA Policy Gate", 0, 2, 1, 0, "FAIL"]
 ]
 
-for row in checkov_data:
-    checkov_sheet.append(row)
+for row in data:
+    ws.append(row)
 
-# -----------------------------
-# SUMMARY SHEET
-# -----------------------------
-summary_sheet = wb.create_sheet("Summary")
+# Header styling
+header_fill = PatternFill(
+    start_color="000000",
+    end_color="000000",
+    fill_type="solid"
+)
 
-summary_sheet["A1"] = "Enterprise DevSecOps Security Report"
-summary_sheet["A1"].font = Font(bold=True)
+header_font = Font(
+    bold=True,
+    color="FFFFFF"
+)
 
-summary_sheet["A3"] = "Tool"
-summary_sheet["B3"] = "Status"
+for cell in ws[1]:
+    cell.fill = header_fill
+    cell.font = header_font
 
-summary_sheet["A4"] = "GitLeaks"
-summary_sheet["B4"] = "Completed"
+# Severity colors
+red_fill = PatternFill(
+    start_color="FF4C4C",
+    end_color="FF4C4C",
+    fill_type="solid"
+)
 
-summary_sheet["A5"] = "SonarCloud"
-summary_sheet["B5"] = "Completed"
+orange_fill = PatternFill(
+    start_color="FFA500",
+    end_color="FFA500",
+    fill_type="solid"
+)
 
-summary_sheet["A6"] = "Snyk"
-summary_sheet["B6"] = "Completed"
+yellow_fill = PatternFill(
+    start_color="FFFF99",
+    end_color="FFFF99",
+    fill_type="solid"
+)
 
-summary_sheet["A7"] = "Trivy"
-summary_sheet["B7"] = "Critical Vulnerabilities Found"
+green_fill = PatternFill(
+    start_color="90EE90",
+    end_color="90EE90",
+    fill_type="solid"
+)
 
-summary_sheet["A8"] = "Checkov"
-summary_sheet["B8"] = "Policy Violations Found"
+# Apply row styling
+for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
 
-summary_sheet["A9"] = "OPA Policy Gate"
-summary_sheet["B9"] = "Deployment Blocked"
+    critical = row[1].value
+    high = row[2].value
+    medium = row[3].value
+    status = row[5].value
+
+    if critical > 0:
+        for cell in row:
+            cell.fill = red_fill
+
+    elif high > 0:
+        for cell in row:
+            cell.fill = orange_fill
+
+    elif medium > 0:
+        for cell in row:
+            cell.fill = yellow_fill
+
+    elif status == "PASS":
+        for cell in row:
+            cell.fill = green_fill
+
+# Adjust column widths
+column_widths = {
+    "A": 30,
+    "B": 12,
+    "C": 12,
+    "D": 12,
+    "E": 12,
+    "F": 15
+}
+
+for col, width in column_widths.items():
+    ws.column_dimensions[col].width = width
 
 # Save workbook
 wb.save("security-report.xlsx")
 
-print("Excel security report generated successfully.")
+print("Enterprise Excel security report generated successfully.")
