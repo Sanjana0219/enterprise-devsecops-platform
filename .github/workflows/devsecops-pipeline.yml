@@ -184,12 +184,19 @@ jobs:
       # -----------------------------
       # CONNECT TO EKS
       # -----------------------------
-
       - name: Update kubeconfig
         run: |
           aws eks update-kubeconfig \
             --region ap-south-1 \
             --name enterprise-devsecops-cluster-2
+
+      - name: Create Production Namespace
+        run: |
+          kubectl create namespace production --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy MongoDB
+        run: |
+          kubectl apply -f customer-app/mongodb-deployment.yaml
       # -----------------------------
       # DEPLOY MONGODB
       # -----------------------------
