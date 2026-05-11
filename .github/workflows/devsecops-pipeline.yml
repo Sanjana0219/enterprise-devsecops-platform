@@ -189,7 +189,7 @@ jobs:
         run: |
           aws eks update-kubeconfig \
             --region ap-south-1 \
-            --name enterprise-devsecops-cluster
+            --name enterprise-devsecops-cluster-2
       # -----------------------------
       # DEPLOY MONGODB
       # -----------------------------
